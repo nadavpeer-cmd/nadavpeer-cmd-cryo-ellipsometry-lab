@@ -1,0 +1,488 @@
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Cryogenic Ellipsometry Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Math&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-light: #f1f5f9; --panel-bg: #ffffff;
+            --accent-green: #10b981; --accent-blue: #0ea5e9; --accent-amber: #f59e0b; --accent-red: #ef4444;
+            --text-main: #1f2937; --text-muted: #6b7280; --border-color: #e2e8f0;
+        }
+
+        body { margin: 0; padding: 0; background: var(--bg-light); color: var(--text-main); font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; justify-content: center; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid var(--border-color); z-index: 10; }
+        h1 { margin: 0; font-size: 1.5rem; font-weight: 600; color: var(--accent-blue); }
+        
+        .controls-wrapper { display: flex; gap: 30px; align-items: center; }
+        .sample-selector select { padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 1rem; font-weight: bold; color: var(--text-main); outline: none; }
+        
+        .temp-controls { display: flex; align-items: center; gap: 10px; }
+        .temp-btn { background: var(--panel-bg); border: 1px solid var(--border-color); width: 32px; height: 32px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s; }
+        .temp-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: #f8fafc; }
+        
+        input[type="range"] { -webkit-appearance: none; width: 200px; height: 10px; background: linear-gradient(to right, var(--accent-blue), var(--accent-amber), var(--accent-red)); border-radius: 5px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: white; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2); border: 2px solid var(--border-color); }
+        #tempValue { font-size: 1.4rem; font-weight: bold; width: 70px; text-align: right; }
+
+        main { display: flex; flex-grow: 1; position: relative; }
+        #ellipsometer-stage { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; background-color: #ffffff; overflow: hidden; }
+        #real-ellipsometer-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; z-index: 0; opacity: 1; }
+
+        #sample-stage { width: 160px; height: 140px; top: 50%; left: 50%; transform: translate(-50%, -50%); position: absolute; z-index: 2; background: rgba(14, 165, 233, 0.05); border: 2px solid var(--accent-blue); border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.2s; font-weight: bold; color: var(--text-muted); }
+        #sample-stage:hover { background: rgba(14, 165, 233, 0.15); transform: translate(-50%, -50%) scale(1.05); }
+        .sample-wafer { width: 80px; height: 8px; background: #fbbf24; margin-bottom: 15px; border-radius: 4px; box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);}
+        .laser-beam { position: absolute; background: var(--accent-green); height: 4px; z-index: 3; box-shadow: 0 0 15px var(--accent-green); transform-origin: left center; width: 0; }
+        #laser-in { top: 30%; left: 15%; }
+        #laser-out { top: 60%; left: 50%; }
+        #cooling-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(14, 165, 233, 0.4); border-radius: 6px; opacity: 0; pointer-events: none; transition: 0.5s; }
+
+        #action-panel { position: absolute; bottom: 30px; left: 30px; z-index: 5; display: flex; gap: 20px; align-items: flex-end; }
+        .btn-group-vertical { display: flex; flex-direction: column; gap: 10px; }
+        button { background: var(--panel-bg); color: var(--text-main); border: 2px solid var(--border-color); padding: 15px 30px; border-radius: 12px; font-size: 1rem; cursor: pointer; font-weight: bold; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        button:hover:not(:disabled) { background: #f8fafc; border-color: var(--accent-blue); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        #btn-measure { border-color: var(--accent-green); color: var(--accent-green); }
+        #btn-measure:hover:not(:disabled) { background: rgba(16, 185, 129, 0.05); border-color: var(--accent-green); }
+        #btn-formulas, #btn-global { padding: 10px 20px; font-size: 0.85rem; border-color: #cbd5e1; color: var(--text-muted); }
+        #btn-autodemo { padding: 10px 20px; font-size: 0.85rem; border-color: #cbd5e1; color: #6366f1; }
+        #btn-autodemo:hover { background: rgba(99, 102, 241, 0.05); border-color: #6366f1; }
+
+        #pc-icon { width: 180px; height: 180px; background: var(--panel-bg); border: 2px solid var(--border-color); border-radius: 12px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); flex-direction: column; color: var(--accent-blue); transition: 0.2s; padding: 15px; box-sizing: border-box; }
+        #pc-icon:hover { transform: scale(1.05); background: #f8fafc; border-color: var(--accent-blue); }
+        #pc-icon img { width: 90%; height: 90px; object-fit: contain; margin-bottom: 10px; border-radius: 4px; }
+
+        #energy-canvas-container { position: absolute; bottom: 30px; right: 30px; z-index: 5; width: 350px; height: 270px; border-radius: 12px; overflow: hidden; border: 2px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.1); background: #ffffff; }
+        #energy-label { position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: var(--text-main); z-index: 5; text-transform: uppercase; pointer-events: none; font-weight: bold; }
+
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal { background: var(--panel-bg); padding: 30px; border-radius: 16px; border: 1px solid var(--border-color); width: 900px; max-width: 95%; box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-height: 85vh; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; }
+        .modal h2 { margin-top: 0; color: var(--accent-blue); }
+        .close-btn { float: right; cursor: pointer; color: var(--accent-red); font-size: 1.5rem; font-weight: bold; }
+        
+        .graph-placeholder { width: 100%; height: auto; background: #ffffff; border: 2px dashed var(--border-color); border-radius: 8px; margin-top: 15px; margin-bottom: 15px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 5px; }
+        .graph-placeholder img { max-width: 100%; height: auto; max-height: 60vh; object-fit: contain; display: block; margin: 0 auto; }
+
+        .formula-box { background: #f8fafc; border-left: 4px solid var(--accent-blue); padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0; }
+        .formula-box h3 { margin: 0 0 5px 0; font-size: 1rem; color: var(--text-main); }
+        .formula-box p { font-size: 0.9rem; margin: 0 0 10px 0; color: var(--text-muted); }
+        .math-text { font-family: 'STIX Two Math', serif; font-size: 1.2rem; display: block; color: #0f172a; text-align: center; background: #e2e8f0; padding: 15px 10px; border-radius: 6px; overflow-x: auto; white-space: nowrap; line-height: 1.5;}
+
+        .global-grid { display: flex; flex-direction: column; gap: 30px; margin-top: 20px; width: 100%; }
+        .global-card { border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; text-align: center; background: #ffffff; box-sizing: border-box; width: 100%; }
+        .global-card h4 { margin: 0 0 15px 0; font-size: 1rem; color: var(--text-main); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .global-card img { max-width: 100%; height: auto; max-height: 65vh; object-fit: contain; background: #f8fafc; border-radius: 4px; display: block; margin: 0 auto; }
+
+        .spinner { border: 4px solid rgba(14, 165, 233, 0.1); width: 50px; height: 50px; border-radius: 50%; border-left-color: var(--accent-blue); animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Ellipsometry Interactive Lab</h1>
+        <div class="controls-wrapper">
+            <div class="sample-selector">
+                <select id="sampleSelect" onchange="resetMeasurement()">
+                   <option value="GaAs_Si">GaAs_Si</option>
+                </select>
+            </div>
+            <div class="temp-controls">
+                <span style="color: var(--text-muted); font-weight: bold;">Cryo</span>
+                <button class="temp-btn" onclick="adjustTemp(-5)">-</button>
+                <input type="range" id="tempSlider" min="-110" max="20" step="5" value="20" oninput="updateTemp(this.value)">
+                <button class="temp-btn" onclick="adjustTemp(5)">+</button>
+                <span style="color: var(--text-muted); font-weight: bold;">Room</span>
+                <span id="tempValue">20°C</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="ellipsometer-stage">
+            <img id="real-ellipsometer-bg" src="elipsometer_linkam.png" alt="Ellipsometer Background" onerror="this.style.display='none';">
+            
+            <div id="sample-stage">
+                <div class="sample-wafer"></div>
+                <div style="font-size: 0.9rem; color: var(--accent-blue);">Linkam Cell</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);" id="live-temp-display">20°C</div>
+                <div id="cooling-overlay"></div>
+            </div>
+
+            <div class="laser-beam" id="laser-in"></div>
+            <div class="laser-beam" id="laser-out"></div>
+        </div>
+
+        <div id="action-panel">
+            <div class="btn-group-vertical">
+                <button id="btn-measure" onclick="runMeasurement()">1. Run Measurement</button>
+                <button id="btn-formulas" onclick="openModal('modal-formulas')"><span style="font-size: 1.2rem;">∑</span> Physics & Formulas</button>
+                <button id="btn-global" onclick="openModal('modal-global')"><span style="font-size: 1.2rem;">📊</span> Global Results</button>
+                <button id="btn-autodemo" onclick="toggleAutoDemo()">🤖 Auto Tour</button>
+            </div>
+            
+            <div id="pc-icon" onclick="openAnalyzeModal()">
+                <img src="wvase.png" alt="PC Software" onerror="this.style.display='none'; this.parentNode.innerHTML='<span style=\'font-size:3rem;\'>💻</span>';">
+                <div style="font-size: 1rem; color: var(--accent-blue); margin-top: 10px; font-weight: bold;">PC Interface</div>
+            </div>
+        </div>
+
+        <div id="energy-canvas-container">
+            <div id="energy-label">Quantum Dynamics</div>
+            <canvas id="energyCanvas" width="350" height="270"></canvas>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="modal-formulas">
+        <div class="modal">
+            <span class="close-btn" onclick="closeModal('modal-formulas')">&times;</span>
+            <h2 style="margin-bottom: 20px;">Ellipsometry & Physics Models</h2>
+            
+            <div class="formula-box">
+                <h3>1. Polarization Change (Ψ & Δ)</h3>
+                <p>An ellipsometer measures the complex reflectance ratio (ρ) between p- and s-polarized light. Ψ represents the amplitude ratio, and Δ is the phase shift.</p>
+                <span class="math-text">ρ = r<sub>p</sub> / r<sub>s</sub> = tan(Ψ)e<sup>iΔ</sup></span>
+            </div>
+
+            <div class="formula-box">
+                <h3>2. Complex Refractive Index (n, k)</h3>
+                <p>Using a layer-stack model, the raw Ψ and Δ are inverted to find the complex refractive index, dictating dispersion (n) and absorption (k).</p>
+                <span class="math-text">N = n - ik</span>
+            </div>
+
+            <div class="formula-box">
+                <h3>3. Absorption & Direct Bandgap (Tauc Relation)</h3>
+                <p>The absorption coefficient (α) is calculated from k. For direct bandgap materials like GaAs, plotting (αhν)² reveals the optical bandgap (Eg) at the x-intercept.</p>
+                <span class="math-text">α = 4πk / λ &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; (αhν)² = A(hν - E<sub>g</sub>)</span>
+            </div>
+            
+            <div class="formula-box" style="border-color: var(--accent-amber);">
+                <h3>4. Temperature Dependence (Varshni)</h3>
+                <p>Describes how the bandgap shrinks as temperature increases due to lattice expansion and electron-phonon interactions.</p>
+                <span class="math-text" style="background: rgba(245, 158, 11, 0.1);">E<sub>g</sub>(T) = E<sub>g</sub>(0) - (αT²) / (T + β)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-global">
+        <div class="modal" style="width: 950px;">
+            <span class="close-btn" onclick="closeModal('modal-global')">&times;</span>
+            <h2 style="color: var(--accent-amber); margin-bottom: 5px;">Global Measurements Summary</h2>
+            <p style="color: var(--text-muted); margin-top: 0; margin-bottom: 25px;">Comprehensive results across the full temperature range (20°C to -110°C).</p>
+            
+            <div class="global-grid">
+                <div class="global-card">
+                    <h4>Global Absorption Coefficient (α)</h4>
+                    <img src="global_alpha.png" alt="Global Alpha" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><text x=\'10\' y=\'50\' fill=\'#94a3b8\'>Missing global_alpha.png</text></svg>'">
+                </div>
+                <div class="global-card">
+                    <h4>Combined Tauc Plots</h4>
+                    <img src="global_tauc.png" alt="Global Tauc" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><text x=\'10\' y=\'50\' fill=\'#94a3b8\'>Missing global_tauc.png</text></svg>'">
+                </div>
+                <div class="global-card">
+                    <h4>Bandgap Theory (Varshni vs. Measured)</h4>
+                    <img src="global_bandgap_model.png" alt="Bandgap Model" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><text x=\'10\' y=\'50\' fill=\'#94a3b8\'>Missing global_bandgap_model.png</text></svg>'">
+                </div>
+                <div class="global-card">
+                    <h4>Cryogenic Noise Analysis (Delta)</h4>
+                    <img src="global_noise_delta.png" alt="Noise Delta" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><text x=\'10\' y=\'50\' fill=\'#94a3b8\'>Missing global_noise_delta.png</text></svg>'">
+                </div>
+                <div class="global-card">
+                    <h4>Cryogenic Noise Analysis (Psi)</h4>
+                    <img src="global_noise_psi.png" alt="Noise Psi" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><text x=\'10\' y=\'50\' fill=\'#94a3b8\'>Missing global_noise_psi.png</text></svg>'">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-analyze">
+        <div class="modal">
+            <span class="close-btn" onclick="closeModal('modal-analyze')">&times;</span>
+            <h2 id="title-psi">Raw Polarization Data (Ψ, Δ)</h2>
+            <p>File loaded: <strong id="file-psi"></strong></p>
+            <div class="graph-placeholder">
+                <img id="img-psi" src="" alt="Psi Delta Graph">
+            </div>
+            <button onclick="openFitModal()" style="margin-top: 20px; width: 100%; border-color: var(--accent-blue); color: var(--accent-blue);">2. Apply Structural Model & Extract (n,k)</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-loading">
+        <div class="modal" style="width: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+            <div class="spinner"></div>
+            <h3 style="color: var(--accent-blue); margin: 10px 0;">Levenberg-Marquardt Regression</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Fitting experimental layer stack data... <span id="load-pct">0%</span></p>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-results">
+        <div class="modal">
+            <span class="close-btn" onclick="closeModal('modal-results')">&times;</span>
+            <h2 id="title-nk">Extracted Optical Indices (n, k)</h2>
+            <p>File loaded: <strong id="file-nk"></strong></p>
+            <div class="graph-placeholder" style="border-color: var(--accent-green); border-style: solid;">
+                <img id="img-nk" src="" alt="n and k Graph">
+            </div>
+            <button onclick="openAlphaModal()" style="margin-top: 20px; width: 100%; border-color: var(--accent-green); color: var(--accent-green);">3. Extract Absorption Coefficient (α)</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-alpha">
+        <div class="modal">
+            <span class="close-btn" onclick="closeModal('modal-alpha')">&times;</span>
+            <h2 id="title-alpha">Absorption Coefficient (α)</h2>
+            <p>File loaded: <strong id="file-alpha"></strong></p>
+            <div class="graph-placeholder" style="border-color: var(--accent-green); border-style: solid;">
+                <img id="img-alpha" src="" alt="Alpha Graph">
+            </div>
+            <button onclick="openTaucModal()" style="margin-top: 20px; width: 100%; background: var(--accent-blue); color: white; border: none;">4. Perform Tauc Plot Analysis</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-tauc">
+        <div class="modal">
+            <span class="close-btn" onclick="closeModal('modal-tauc')">&times;</span>
+            <h2 id="title-tauc">Tauc Plot Analysis (Bandgap Extraction)</h2>
+            <p>File loaded: <strong id="file-tauc"></strong></p>
+            <div class="graph-placeholder" style="border-color: var(--accent-amber); border-style: solid;">
+                <img id="img-tauc" src="" alt="Tauc Plot">
+            </div>
+            <p style="font-size: 1.1rem; text-align: center; margin-top: 15px; font-weight: bold;">MATLAB Auto-Extraction Applied</p>
+        </div>
+    </div>
+
+    <script>
+        let currentTemp = 20; 
+        let isMeasuring = false; 
+        let autoDemoActive = false;
+        let autoDemoTimeout = null;
+
+        function updateTemp(val) {
+            currentTemp = parseInt(val);
+            if (currentTemp > 20) currentTemp = 20;
+            if (currentTemp < -110) currentTemp = -110;
+
+            document.getElementById('tempSlider').value = currentTemp;
+            document.getElementById('tempValue').innerText = currentTemp + "°C";
+            document.getElementById('live-temp-display').innerText = currentTemp + "°C";
+            
+            let color = currentTemp > 0 ? '#ef4444' : '#38bdf8';
+            document.getElementById('tempValue').style.color = color;
+            document.getElementById('sample-stage').style.borderColor = color;
+            
+            let coolingIntensity = (20 - currentTemp) / 130; 
+            document.getElementById('cooling-overlay').style.opacity = coolingIntensity;
+            
+            resetMeasurement(); 
+            populateImages(); 
+        }
+
+        function adjustTemp(amount) {
+            updateTemp(currentTemp + amount);
+        }
+
+        function resetMeasurement() {}
+
+        function getFileNamePrefix() {
+            let sample = document.getElementById('sampleSelect').value; 
+            let tempStr = currentTemp >= 0 ? currentTemp + "C" : "m" + Math.abs(currentTemp) + "C";
+            return sample + "_" + tempStr; 
+        }
+
+        function populateImages() {
+            let prefix = getFileNamePrefix();
+            let folderPath = "";
+            
+            document.getElementById('file-psi').innerText = prefix + "_psi.png";
+            document.getElementById('img-psi').src = folderPath + prefix + "_psi.png";
+            
+            document.getElementById('file-nk').innerText = prefix + "_nk.png";
+            document.getElementById('img-nk').src = folderPath + prefix + "_nk.png";
+
+            document.getElementById('file-alpha').innerText = prefix + "_alpha.png";
+            document.getElementById('img-alpha').src = folderPath + prefix + "_alpha.png";
+            
+            document.getElementById('file-tauc').innerText = prefix + "_tauc.png";
+            document.getElementById('img-tauc').src = folderPath + prefix + "_tauc.png";
+
+            document.getElementById('title-psi').innerHTML = `Raw Polarization Data (Ψ, Δ) at ${currentTemp}°C`;
+            document.getElementById('title-nk').innerHTML = `Extracted Optical Indices (n, k) at ${currentTemp}°C`;
+            document.getElementById('title-alpha').innerHTML = `Absorption Coefficient (α) at ${currentTemp}°C`;
+            document.getElementById('title-tauc').innerHTML = `Tauc Plot Analysis at ${currentTemp}°C`;
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function setupLasers() {
+            const stage = document.getElementById('sample-stage').getBoundingClientRect();
+            const mainRect = document.querySelector('main').getBoundingClientRect();
+
+            const targetX = stage.left + (stage.width / 2) - mainRect.left;
+            const targetY = stage.top + (stage.height / 2) - mainRect.top;
+
+            const srcX = mainRect.width * 0.15; const srcY = mainRect.height * 0.35; 
+            const detX = mainRect.width * 0.85; const detY = mainRect.height * 0.35;
+
+            const inLaser = document.getElementById('laser-in');
+            const outLaser = document.getElementById('laser-out');
+
+            const angleIn = Math.atan2(targetY - srcY, targetX - srcX) * 180 / Math.PI;
+            const distIn = Math.hypot(targetX - srcX, targetY - srcY);
+            inLaser.style.top = srcY + 'px'; inLaser.style.left = srcX + 'px';
+            inLaser.style.transform = `rotate(${angleIn}deg)`; inLaser.dataset.targetWidth = distIn;
+
+            const angleOut = Math.atan2(detY - targetY, detX - targetX) * 180 / Math.PI;
+            const distOut = Math.hypot(detX - targetX, detY - targetY);
+            outLaser.style.top = targetY + 'px'; outLaser.style.left = targetX + 'px';
+            outLaser.style.transform = `rotate(${angleOut}deg)`; outLaser.dataset.targetWidth = distOut;
+        }
+        window.addEventListener('resize', setupLasers);
+        setTimeout(setupLasers, 100);
+
+        function runMeasurement(callback) {
+            if(isMeasuring) return; 
+            isMeasuring = true;
+            document.getElementById('btn-measure').disabled = true;
+            
+            const inLaser = document.getElementById('laser-in');
+            const outLaser = document.getElementById('laser-out');
+
+            inLaser.style.transition = "none"; inLaser.style.width = "0px";
+            outLaser.style.transition = "none"; outLaser.style.width = "0px";
+            inLaser.offsetHeight; outLaser.offsetHeight;
+
+            inLaser.style.transition = "width 0.5s linear";
+            inLaser.style.width = inLaser.dataset.targetWidth + 'px';
+
+            setTimeout(() => {
+                outLaser.style.transition = "width 0.5s linear";
+                outLaser.style.width = outLaser.dataset.targetWidth + 'px';
+                triggerPhotonExcitation();
+            }, 500);
+
+            setTimeout(() => {
+                inLaser.style.width = '0';
+                outLaser.style.width = '0';
+                isMeasuring = false;
+                populateImages(); 
+                document.getElementById('btn-measure').disabled = false;
+                if(callback) callback();
+            }, 2500);
+        }
+
+        function openAnalyzeModal() { 
+            populateImages(); 
+            openModal('modal-analyze'); 
+        }
+        
+        function openFitModal() {
+            closeModal('modal-analyze'); openModal('modal-loading');
+            let pct = 0;
+            let loadTxt = document.getElementById('load-pct');
+            let interval = setInterval(() => {
+                pct += 10; loadTxt.innerText = pct + "%";
+                if(pct >= 100) {
+                    clearInterval(interval); closeModal('modal-loading'); 
+                    populateImages(); 
+                    openModal('modal-results');
+                }
+            }, 150);
+        }
+
+        function openAlphaModal() { closeModal('modal-results'); populateImages(); openModal('modal-alpha'); }
+        function openTaucModal() { closeModal('modal-alpha'); populateImages(); openModal('modal-tauc'); }
+
+        function toggleAutoDemo() {
+            const btn = document.getElementById('btn-autodemo');
+            if(autoDemoActive) {
+                autoDemoActive = false; clearTimeout(autoDemoTimeout);
+                btn.innerText = "🤖 Auto Tour"; btn.style.borderColor = "#cbd5e1"; btn.style.color = "var(--text-muted)";
+                document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+            } else {
+                autoDemoActive = true; btn.innerText = "🛑 Stop Tour"; btn.style.borderColor = "var(--accent-red)"; btn.style.color = "var(--accent-red)";
+                runAutoStep();
+            }
+        }
+
+        function runAutoStep() {
+            if(!autoDemoActive) return;
+            let targetCycleTemps = [20, 0, -20, -50, -70, -110];
+            let currentIdx = targetCycleTemps.indexOf(currentTemp);
+            let nextIdx = (currentIdx + 1) % targetCycleTemps.length;
+            updateTemp(targetCycleTemps[nextIdx]);
+
+            autoDemoTimeout = setTimeout(() => {
+                runMeasurement(() => {
+                    openAnalyzeModal();
+                    autoDemoTimeout = setTimeout(() => {
+                        openFitModal();
+                        autoDemoTimeout = setTimeout(() => {
+                            openAlphaModal();
+                            autoDemoTimeout = setTimeout(() => {
+                                openTaucModal();
+                                autoDemoTimeout = setTimeout(() => {
+                                    closeModal('modal-tauc');
+                                    runAutoStep();
+                                }, 3000);
+                            }, 3000);
+                        }, 4000); 
+                    }, 3000);
+                });
+            }, 1000);
+        }
+
+        const canvas = document.getElementById('energyCanvas'); const ctx = canvas.getContext('2d');
+        const BAND_W = canvas.width; const COND_Y = 80; const DEFECT_Y = 135; const VAL_Y = 225; const BAND_H = 30;
+        let thermalEnergy = 0; let measurementPhotonsActive = false;
+
+        class Electron {
+            constructor() { this.state = 'VB'; this.x = Math.random() * BAND_W; this.y = VAL_Y; this.vx = (Math.random() - 0.5) * 0.5; this.vy = 0; this.color = '#ef4444'; this.isOpticallyExcited = false; this.timer = 0; }
+            update(energy) {
+                let targetY = VAL_Y; if (this.state === 'CB') targetY = COND_Y; if (this.state === 'DEFECT') targetY = DEFECT_Y;
+                if (this.isOpticallyExcited) { this.timer--; if (this.timer <= 0) { this.state = 'VB'; this.isOpticallyExcited = false; } }
+                else {
+                    if (energy > 1.2) {
+                        if (this.state === 'VB' && Math.random() < 0.005) { this.state = Math.random() > 0.5 ? 'CB' : 'DEFECT'; }
+                        else if (this.state !== 'VB' && Math.random() < 0.02) this.state = 'VB';
+                    } else if (this.state !== 'VB') { if (Math.random() < 0.05) this.state = 'VB'; }
+                }
+                if (measurementPhotonsActive && this.state === 'VB' && !this.isOpticallyExcited) {
+                    if (Math.random() < 0.02) { this.state = 'CB'; this.isOpticallyExcited = true; this.timer = 60; }
+                }
+                this.x += this.vx * (1 + energy*0.5); this.vy += (targetY - this.y) * 0.1; this.vy *= 0.8; this.y += this.vy + (Math.random() - 0.5) * energy * 2;
+                if (this.x < 0) this.x = BAND_W; if (this.x > BAND_W) this.x = 0;
+                if (this.isOpticallyExcited) this.color = '#10b981'; else if (this.state !== 'VB') this.color = '#f97316'; else this.color = currentTemp > 0 ? '#facc15' : '#38bdf8';
+            }
+            draw(ctx) { ctx.beginPath(); ctx.arc(this.x, this.y, 3.5, 0, Math.PI*2); ctx.fillStyle = this.color; if(this.isOpticallyExcited) { ctx.shadowBlur = 12; ctx.shadowColor = '#10b981'; } ctx.fill(); ctx.shadowBlur = 0; }
+        }
+
+        const electrons = Array.from({length: 40}, () => new Electron());
+        function triggerPhotonExcitation() { measurementPhotonsActive = true; setTimeout(() => { measurementPhotonsActive = false; }, 1500); }
+
+        function animateEnergy() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            thermalEnergy = Math.max(0, (currentTemp + 110) / 130 * 5); let blur = thermalEnergy * 3;
+            ctx.shadowBlur = blur; ctx.shadowColor = currentTemp > 0 ? '#ef4444' : '#0ea5e9';
+            ctx.fillStyle = 'rgba(241, 245, 249, 0.9)'; ctx.fillRect(0, COND_Y - BAND_H/2, BAND_W, BAND_H); ctx.fillRect(0, VAL_Y - BAND_H/2, BAND_W, BAND_H);
+            ctx.beginPath(); ctx.setLineDash([5, 5]); ctx.moveTo(0, DEFECT_Y); ctx.lineTo(BAND_W, DEFECT_Y); ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = '#6b7280'; ctx.font = 'bold 11px sans-serif';
+            ctx.fillText('CONDUCTION BAND (CB)', 5, COND_Y - 20); ctx.fillText('VALENCE BAND (VB)', 5, VAL_Y + 28);
+            ctx.fillStyle = '#f59e0b'; ctx.fillText('DEFECT STATE', 5, DEFECT_Y - 8);
+            
+            if(measurementPhotonsActive) {
+                ctx.strokeStyle = '#10b981'; ctx.lineWidth = 1.5;
+                for(let i=0; i<4; i++) { ctx.beginPath(); let px = Math.random() * BAND_W; ctx.moveTo(px, 0); ctx.lineTo(px + 20, VAL_Y); ctx.stroke(); }
+            }
+            electrons.forEach(el => { el.update(thermalEnergy); el.draw(ctx); });
+            requestAnimationFrame(animateEnergy);
+        }
+        animateEnergy();
+
+        populateImages();
+    </script>
+</body>
+</html>
