@@ -58,12 +58,13 @@
         #energy-label { position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: var(--text-main); z-index: 5; text-transform: uppercase; pointer-events: none; font-weight: bold; }
 
         .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 100; }
-        .modal { background: var(--panel-bg); padding: 30px; border-radius: 16px; border: 1px solid var(--border-color); width: 900px; max-width: 95%; box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-height: 85vh; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; }
-        .modal h2 { margin-top: 0; color: var(--accent-blue); }
+        .modal { background: var(--panel-bg); padding: 25px 30px; border-radius: 16px; border: 1px solid var(--border-color); width: 900px; max-width: 95%; box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-height: 92vh; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; }
+        .modal h2 { margin-top: 0; margin-bottom: 5px; color: var(--accent-blue); }
         .close-btn { float: right; cursor: pointer; color: var(--accent-red); font-size: 1.5rem; font-weight: bold; }
         
-        .graph-placeholder { width: 100%; height: auto; background: #ffffff; border: 2px dashed var(--border-color); border-radius: 8px; margin-top: 15px; margin-bottom: 15px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 5px; }
-        .graph-placeholder img { max-width: 100%; height: auto; max-height: 60vh; object-fit: contain; display: block; margin: 0 auto; }
+        /* --- FIXED FOR NO SCROLLING: Restrains graph height to perfectly fit action button on screen --- */
+        .graph-placeholder { width: 100%; height: auto; background: #ffffff; border: 2px dashed var(--border-color); border-radius: 8px; margin-top: 10px; margin-bottom: 10px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 5px; }
+        .graph-placeholder img { max-width: 100%; height: auto; max-height: 42vh; object-fit: contain; display: block; margin: 0 auto; }
 
         .formula-box { background: #f8fafc; border-left: 4px solid var(--accent-blue); padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0; }
         .formula-box h3 { margin: 0 0 5px 0; font-size: 1rem; color: var(--text-main); }
@@ -86,7 +87,7 @@
         <div class="controls-wrapper">
             <div class="sample-selector">
                 <select id="sampleSelect" onchange="resetMeasurement()">
-                   <option value="GaAs_Si">GaAs_Si</option>
+                   <option value="gaas_n36">gaas_n36</option>
                 </select>
             </div>
             <div class="temp-controls">
@@ -175,7 +176,7 @@
             <div class="global-grid">
                 <div class="global-card">
                     <h4>Global Absorption Coefficient (α)</h4>
-                    <canvas id="globalAlphaCanvas" width="750" height="420" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"></canvas>
+                    <img src="global_alpha.png" alt="Global Alpha" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><text x=\'10\' y=\'50\' fill=\'#94a3b8\'>Missing global_alpha.png</text></svg>'">
                 </div>
                 <div class="global-card">
                     <h4>Combined Tauc Plots</h4>
@@ -201,11 +202,11 @@
         <div class="modal">
             <span class="close-btn" onclick="closeModal('modal-analyze')">&times;</span>
             <h2 id="title-psi">Raw Polarization Data (Ψ, Δ)</h2>
-            <p>File loaded: <strong id="file-psi"></strong></p>
+            <p style="margin-top: 0; margin-bottom: 10px; color: var(--text-muted);">File loaded: <strong id="file-psi" style="color: var(--text-main);"></strong></p>
             <div class="graph-placeholder">
                 <img id="img-psi" src="" alt="Psi Delta Graph">
             </div>
-            <button onclick="openFitModal()" style="margin-top: 20px; width: 100%; border-color: var(--accent-blue); color: var(--accent-blue);">2. Apply Structural Model & Extract (n,k)</button>
+            <button onclick="openFitModal()" style="margin-top: 5px; width: 100%; border-color: var(--accent-blue); color: var(--accent-blue); padding: 12px 20px;">2. Apply Structural Model & Extract (n,k)</button>
         </div>
     </div>
 
@@ -221,11 +222,11 @@
         <div class="modal">
             <span class="close-btn" onclick="closeModal('modal-results')">&times;</span>
             <h2 id="title-nk">Extracted Optical Indices (n, k)</h2>
-            <p>File loaded: <strong id="file-nk"></strong></p>
+            <p style="margin-top: 0; margin-bottom: 10px; color: var(--text-muted);">File loaded: <strong id="file-nk" style="color: var(--text-main);"></strong></p>
             <div class="graph-placeholder" style="border-color: var(--accent-green); border-style: solid;">
                 <img id="img-nk" src="" alt="n and k Graph">
             </div>
-            <button onclick="openAlphaModal()" style="margin-top: 20px; width: 100%; border-color: var(--accent-green); color: var(--accent-green);">3. Extract Absorption Coefficient (α)</button>
+            <button onclick="openAlphaModal()" style="margin-top: 5px; width: 100%; border-color: var(--accent-green); color: var(--accent-green); padding: 12px 20px;">3. Extract Absorption Coefficient (α)</button>
         </div>
     </div>
 
@@ -233,11 +234,11 @@
         <div class="modal">
             <span class="close-btn" onclick="closeModal('modal-alpha')">&times;</span>
             <h2 id="title-alpha">Absorption Coefficient (α)</h2>
-            <p>Status: <strong style="color: var(--accent-green);">Real-time Numerical Simulation</strong></p>
-            <div class="graph-placeholder" style="border-color: var(--accent-green); border-style: solid; background: #ffffff;">
-                <canvas id="alphaCanvas" width="700" height="450" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"></canvas>
+            <p style="margin-top: 0; margin-bottom: 10px; color: var(--text-muted);">File loaded: <strong id="file-alpha" style="color: var(--text-main);"></strong></p>
+            <div class="graph-placeholder" style="border-color: var(--accent-green); border-style: solid;">
+                <img id="img-alpha" src="" alt="Alpha Graph">
             </div>
-            <button onclick="openTaucModal()" style="margin-top: 20px; width: 100%; background: var(--accent-blue); color: white; border: none;">4. Perform Tauc Plot Analysis</button>
+            <button onclick="openTaucModal()" style="margin-top: 5px; width: 100%; background: var(--accent-blue); color: white; border: none; padding: 12px 20px;">4. Perform Tauc Plot Analysis</button>
         </div>
     </div>
 
@@ -245,11 +246,11 @@
         <div class="modal">
             <span class="close-btn" onclick="closeModal('modal-tauc')">&times;</span>
             <h2 id="title-tauc">Tauc Plot Analysis (Bandgap Extraction)</h2>
-            <p>File loaded: <strong id="file-tauc"></strong></p>
+            <p style="margin-top: 0; margin-bottom: 10px; color: var(--text-muted);">File loaded: <strong id="file-tauc" style="color: var(--text-main);"></strong></p>
             <div class="graph-placeholder" style="border-color: var(--accent-amber); border-style: solid;">
                 <img id="img-tauc" src="" alt="Tauc Plot">
             </div>
-            <p style="font-size: 1.1rem; text-align: center; margin-top: 15px; font-weight: bold;">MATLAB Auto-Extraction Applied</p>
+            <p style="font-size: 1.1rem; text-align: center; margin-top: 10px; margin-bottom: 0; font-weight: bold; color: var(--accent-amber);">MATLAB Auto-Extraction Applied</p>
         </div>
     </div>
 
@@ -300,6 +301,9 @@
             
             document.getElementById('file-nk').innerText = prefix + "_nk.png";
             document.getElementById('img-nk').src = folderPath + prefix + "_nk.png";
+
+            document.getElementById('file-alpha').innerText = prefix + "_alpha.png";
+            document.getElementById('img-alpha').src = folderPath + prefix + "_alpha.png";
             
             document.getElementById('file-tauc').innerText = prefix + "_tauc.png";
             document.getElementById('img-tauc').src = folderPath + prefix + "_tauc.png";
@@ -308,135 +312,9 @@
             document.getElementById('title-nk').innerHTML = `Extracted Optical Indices (n, k) at ${currentTemp}°C`;
             document.getElementById('title-alpha').innerHTML = `Absorption Coefficient (α) at ${currentTemp}°C`;
             document.getElementById('title-tauc').innerHTML = `Tauc Plot Analysis at ${currentTemp}°C`;
-
-            // Draw dynamic graphs
-            drawAlphaPlot(currentTemp);
-            drawGlobalAlphaPlot();
         }
 
-        // FIXED: Advanced mathematical renderer for localized alpha spectral plots
-        function drawAlphaPlot(temp) {
-            const canvas = document.getElementById('alphaCanvas');
-            if(!canvas) return;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            const padding = { top: 40, right: 30, bottom: 60, left: 75 };
-            const graphW = canvas.width - padding.left - padding.right;
-            const graphH = canvas.height - padding.top - padding.bottom;
-            
-            // Grid and Ticks
-            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
-            for(let w = 600; w <= 1000; w += 100) {
-                let x = padding.left + ((w - 600) / 400) * graphW;
-                ctx.beginPath(); ctx.moveTo(x, padding.top); ctx.lineTo(x, padding.top + graphH); ctx.stroke();
-                ctx.fillStyle = '#6b7280'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-                ctx.fillText(w, x, padding.top + graphH + 20);
-            }
-            for(let a = 0; a <= 14000; a += 2000) {
-                let y = padding.top + graphH - (a / 14000) * graphH;
-                ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(padding.left + graphW, y); ctx.stroke();
-                ctx.fillStyle = '#6b7280'; ctx.font = '12px sans-serif'; ctx.textAlign = 'right';
-                ctx.fillText(a.toLocaleString(), padding.left - 12, y + 4);
-            }
-            
-            // Axes Bounds
-            ctx.strokeStyle = '#1e2937'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(padding.left, padding.top); ctx.lineTo(padding.left, padding.top + graphH);
-            ctx.lineTo(padding.left + graphW, padding.top + graphH); ctx.stroke();
-            
-            // Axis Titles
-            ctx.fillStyle = '#1f2937'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText('Wavelength (nm)', padding.left + graphW/2, canvas.height - 15);
-            ctx.save(); ctx.translate(22, padding.top + graphH/2); ctx.rotate(-Math.PI/2);
-            ctx.fillText('Absorption Coefficient α (cm⁻¹)', 0, 0); ctx.restore();
-            
-            // Physical parameters computation (Varshni shift)
-            let Tk = temp + 273.15;
-            let Eg = 1.519 - (5.405e-4 * Tk * Tk) / (Tk + 204);
-            let lambda_g = 1240 / Eg; 
-            
-            // Rendering spectral line
-            ctx.strokeStyle = '#059669'; ctx.lineWidth = 3.5;
-            ctx.beginPath();
-            for(let i = 0; i <= graphW; i++) {
-                let wl = 600 + (i / graphW) * 400;
-                let alpha = wl < lambda_g ? 11500 * Math.sqrt((lambda_g - wl) / 130) + 1400 * Math.exp((lambda_g - wl)/35) : 1400 * Math.exp((lambda_g - wl)/12);
-                if(alpha > 13500) alpha = 13500 + (alpha - 13500) * 0.05;
-                if(alpha < 50) alpha = 50;
-                let gx = padding.left + i;
-                let gy = padding.top + graphH - (alpha / 14000) * graphH;
-                if(i === 0) ctx.moveTo(gx, gy); else ctx.lineTo(gx, gy);
-            }
-            ctx.stroke();
-        }
-
-        // FIXED: Advanced mathematical renderer for the Global Multi-Temperature Alpha card
-        function drawGlobalAlphaPlot() {
-            const canvas = document.getElementById('globalAlphaCanvas');
-            if(!canvas) return;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            const padding = { top: 30, right: 30, bottom: 50, left: 70 };
-            const graphW = canvas.width - padding.left - padding.right;
-            const graphH = canvas.height - padding.top - padding.bottom;
-            
-            // Grid and Ticks
-            ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
-            for(let w = 600; w <= 1000; w += 100) {
-                let x = padding.left + ((w - 600) / 400) * graphW;
-                ctx.beginPath(); ctx.moveTo(x, padding.top); ctx.lineTo(x, padding.top + graphH); ctx.stroke();
-                ctx.fillStyle = '#94a3b8'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
-                ctx.fillText(w, x, padding.top + graphH + 18);
-            }
-            for(let a = 0; a <= 14000; a += 2000) {
-                let y = padding.top + graphH - (a / 14000) * graphH;
-                ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(padding.left + graphW, y); ctx.stroke();
-                ctx.fillStyle = '#94a3b8'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
-                ctx.fillText(a.toLocaleString(), padding.left - 10, y + 4);
-            }
-            
-            ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.moveTo(padding.left, padding.top); ctx.lineTo(padding.left, padding.top + graphH);
-            ctx.lineTo(padding.left + graphW, padding.top + graphH); ctx.stroke();
-
-            // Labels
-            ctx.fillStyle = '#475569'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText('Wavelength (nm)', padding.left + graphW/2, canvas.height - 12);
-            
-            // Generate full spectrum curve overlay using MATLAB-matched jet gradients
-            const lineTemps = [20, 0, -20, -40, -60, -80, -100, -110];
-            const colors = ['#ef4444', '#f59e0b', '#10b981', '#0ea5e9', '#2563eb', '#4f46e5', '#7c3aed', '#c084fc'];
-            
-            lineTemps.forEach((temp, index) => {
-                let Tk = temp + 273.15;
-                let Eg = 1.519 - (5.405e-4 * Tk * Tk) / (Tk + 204);
-                let lambda_g = 1240 / Eg;
-                
-                ctx.strokeStyle = colors[index]; ctx.lineWidth = 2;
-                ctx.beginPath();
-                for(let i = 0; i <= graphW; i++) {
-                    let wl = 600 + (i / graphW) * 400;
-                    let alpha = wl < lambda_g ? 11500 * Math.sqrt((lambda_g - wl) / 130) + 1400 * Math.exp((lambda_g - wl)/35) : 1400 * Math.exp((lambda_g - wl)/12);
-                    if(alpha > 13500) alpha = 13500 + (alpha - 13500) * 0.05;
-                    if(alpha < 50) alpha = 50;
-                    let gx = padding.left + i;
-                    let gy = padding.top + graphH - (alpha / 14000) * graphH;
-                    if(i === 0) ctx.moveTo(gx, gy); else ctx.lineTo(gx, gy);
-                }
-                ctx.stroke();
-            });
-        }
-
-        function openModal(id) { 
-            document.getElementById(id).style.display = 'flex'; 
-            if(id === 'modal-global') { setTimeout(drawGlobalAlphaPlot, 50); }
-        }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         function setupLasers() {
